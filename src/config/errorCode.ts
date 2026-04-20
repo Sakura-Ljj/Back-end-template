@@ -1,0 +1,6 @@
+export const REQUEST_PARAMS_ERROR_CODE = 400;
+export const NO_AUTH_ERROR_CODE = 401;
+export const FORBIDDEN_ERROR_CODE = 403;
+export const NOT_FOUND_ERROR_CODE = 404;
+export const REQUEST_METHOD_ERROR_CODE = 405;
+export const SYSTEM_ERROR_CODE = 500;

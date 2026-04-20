@@ -1,0 +1,12 @@
+{
+  "request_params_error": "Invalid request parameters",
+  "no_permission_error": "Permission denied",
+  "missing_token": "Missing token",
+  "token_invalid": "Token is invalid or expired",
+  "refresh_token_invalid": "Refresh token is invalid or expired",
+  "corp_id_exists": "Corp id already exists",
+  "route_path_exists": "Route path already exists",
+  "route_name_exists": "Route name already exists",
+  "login_failed": "Invalid account or password",
+  "user_disabled": "Account has been disabled"
+}
