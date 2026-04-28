@@ -20,12 +20,22 @@ const sortRoutes = <T extends { weight: number }>(items: T[]) => {
   return [...items].sort((a, b) => b.weight - a.weight);
 };
 
+/**
+ * @description: 检测路由参数
+ * @param {SaveRouteReq} payload
+ * @param {any} req
+ * @return {*}
+ */
 const assertRoutePayload = (payload: SaveRouteReq, req: any) => {
   if (!payload.path || !payload.name || !payload.title) {
     throw myError(REQUEST_PARAMS_ERROR_CODE, req.__('request_params_error'));
   }
 };
 
+/**
+ * @description: 递归检测是否存在路由挂载在自己的节点上面
+ * @return {*}
+ */
 const assertNoRouteCycle = async (
   currentRouteId: string | undefined,
   parentId: string | undefined,
@@ -130,6 +140,11 @@ const isRouteVisible = (
   return rolePassed && permissionPassed;
 };
 
+/**
+ * @description: 获取后台系统路由列表
+ * @param {any} req
+ * @return {*}
+ */
 export const getRouteAdminList = async (req: any) => {
   const corpId = getRequestCorpId(req);
   const routeQueryBuilder = routeRepository
@@ -198,13 +213,21 @@ export const getRouteMenuTree = async (authorization: AccountAuthorizationContex
   return buildRouteTree(visibleRoutes);
 };
 
+/**
+ * @description: 更新或新建路由
+ * @param {SaveRouteReq} payload
+ * @param {any} req
+ * @return {*}
+ */
 export const saveRoute = async (payload: SaveRouteReq, req: any) => {
   assertRoutePayload(payload, req);
 
+  // 使用事务保证不会出现因为报错而产生假数据
   return AppDataSource.transaction(async (manager) => {
     const corpId = resolveWritableCorpId(req, payload.corp_id || null);
     const nextRoleIds = Array.from(new Set((payload.role_ids || []).filter(Boolean)));
 
+    // 检测路由路径是否存在
     const existedByPath = await manager.getRepository(Route).findOne({
       where: {
         path: payload.path!,
@@ -215,6 +238,7 @@ export const saveRoute = async (payload: SaveRouteReq, req: any) => {
       throw myError(REQUEST_PARAMS_ERROR_CODE, req.__('route_path_exists'));
     }
 
+    // 检测路由名称是否存在
     const existedByName = await manager.getRepository(Route).findOne({
       where: {
         name: payload.name!,
@@ -225,6 +249,7 @@ export const saveRoute = async (payload: SaveRouteReq, req: any) => {
       throw myError(REQUEST_PARAMS_ERROR_CODE, req.__('route_name_exists'));
     }
 
+    // 检测父路由是否存在以及挂载的父路由是否合法
     if (payload.parent_id) {
       const routeRepo = manager.getRepository(Route);
       const parent = await routeRepo.findOne({
@@ -244,47 +269,37 @@ export const saveRoute = async (payload: SaveRouteReq, req: any) => {
       ? await manager.getRepository(Route).findOne({ where: { id: payload.id } })
       : null;
 
+    const saveData = {
+      path: payload.path!,
+      name: payload.name!,
+      title: payload.title!,
+      corp_id: corpId,
+      component_path: payload.component_path || null,
+      is_keep_alive: !!payload.is_keep_alive,
+      is_hide: !!payload.is_hide,
+      icon: payload.icon || null,
+      redirect: payload.redirect || null,
+      parent_id: payload.parent_id || null,
+      weight: payload.weight || 0,
+      permission_code: payload.permission_code || null,
+      route_type: payload.route_type || 'menu',
+      is_enabled: payload.is_enabled !== false,
+      remark: payload.remark || '',
+      updater
+    }
+
     if (!route) {
       route = manager.getRepository(Route).create({
-        path: payload.path!,
-        name: payload.name!,
-        title: payload.title!,
-        corp_id: corpId,
-        component_path: payload.component_path || null,
-        is_keep_alive: !!payload.is_keep_alive,
-        is_hide: !!payload.is_hide,
-        icon: payload.icon || null,
-        redirect: payload.redirect || null,
-        parent_id: payload.parent_id || null,
-        weight: payload.weight || 0,
-        permission_code: payload.permission_code || null,
-        route_type: payload.route_type || 'menu',
-        is_enabled: payload.is_enabled !== false,
-        remark: payload.remark || '',
+        ...saveData,
         creator: updater,
-        updater
       });
     } else {
-      route.path = payload.path!;
-      route.name = payload.name!;
-      route.title = payload.title!;
-      route.corp_id = corpId;
-      route.component_path = payload.component_path || null;
-      route.is_keep_alive = !!payload.is_keep_alive;
-      route.is_hide = !!payload.is_hide;
-      route.icon = payload.icon || null;
-      route.redirect = payload.redirect || null;
-      route.parent_id = payload.parent_id || null;
-      route.weight = payload.weight || 0;
-      route.permission_code = payload.permission_code || null;
-      route.route_type = payload.route_type || 'menu';
-      route.is_enabled = payload.is_enabled !== false;
-      route.remark = payload.remark || '';
-      route.updater = updater;
+      Object.assign(route, saveData)
     }
 
     route = await manager.getRepository(Route).save(route);
 
+    // 删除旧的路由权限, 添加新的路由权限
     const existedBindings = await manager.getRepository(RouteRole).find({
       where: { route_id: route.id }
     });
