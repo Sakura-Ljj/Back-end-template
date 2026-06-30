@@ -8,5 +8,7 @@
   "route_path_exists": "路由路径已存在",
   "route_name_exists": "路由名称已存在",
   "login_failed": "账号或密码错误",
-  "user_disabled": "账号已禁用"
+  "user_disabled": "账号已禁用",
+  "account_exists": "账号已存在",
+  "account_repeat": "账号创建重复"
 }

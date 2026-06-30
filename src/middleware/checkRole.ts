@@ -2,7 +2,7 @@
  * @Author: Sakura 1430008132@qq.com
  * @Date: 2026-04-16 15:22:00
  * @LastEditors: Sakura 1430008132@qq.com
- * @LastEditTime: 2026-04-17 16:27:16
+ * @LastEditTime: 2026-04-29 18:21:14
  * @FilePath: \Back-end-template\src\middleware\checkRole.ts
  * @Description: 检查角色权限中间件
  */
@@ -18,6 +18,8 @@ export default (roles: string[] = []) => {
     }
 
     const authorization = await getRequestAuthorization(req);
+    console.log(authorization.roles, req.authorizationContext);
+
     const userRoles = authorization.roles || [];
     const hasRole = roles.some((role) => userRoles.includes(role));
 

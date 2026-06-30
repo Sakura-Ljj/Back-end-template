@@ -163,18 +163,17 @@ export const getRouteAdminList = async (req: any) => {
 
   const roleMap = new Map(roles.map((item) => [item.id, item]));
 
-  return {
-    list: routes.map((route) => {
-      const bindings = routeRoles.filter((item) => item.route_id === route.id);
-      return {
-        ...route,
-        role_ids: bindings.map((item) => item.role_id),
-        role_codes: bindings
-          .map((item) => roleMap.get(item.role_id)?.code || '')
-          .filter(Boolean)
-      };
-    })
-  };
+  return routes.map((route) => {
+    const bindings = routeRoles.filter((item) => item.route_id === route.id);
+    return {
+      ...route,
+      role_ids: bindings.map((item) => item.role_id),
+      role_codes: bindings
+        .map((item) => roleMap.get(item.role_id)?.code || '')
+        .filter(Boolean)
+    };
+  })
+
 };
 
 /**
